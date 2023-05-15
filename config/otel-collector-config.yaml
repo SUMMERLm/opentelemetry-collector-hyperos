@@ -7,7 +7,6 @@ receivers:
       match[]:
         - '{job="kubelet"}'
         - '{reporter_name="mlet1"}'
-#        - '{__name__= "container_spec_cpu_quota"}'
 processors:
   hypermonitor_relationmetricprocessor:
     rules:

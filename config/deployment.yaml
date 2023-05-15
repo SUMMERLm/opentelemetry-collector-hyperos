@@ -1,55 +1,67 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: paladin
-  namespace: hypermonitor
+  annotations:
   labels:
-    app: opentelemetry
-    component: otel-collector
+    app: hyperos-relation-metric
+    component: otel-collector-hyperos-relation
+  name: hyperos-relation
+  namespace: default
 spec:
+  replicas: 1
   selector:
     matchLabels:
-      app: opentelemetry
-      component: otel-collector
-  minReadySeconds: 5
-  progressDeadlineSeconds: 120
-  replicas: 1
+      app: hyperos-relation-metric
+      component: otel-collector-hyperos-relation
   template:
     metadata:
+      creationTimestamp: null
       labels:
-        app: opentelemetry
-        component: otel-collector
+        app: hyperos-relation-metric
+        component: otel-collector-hyperos-relation
     spec:
       containers:
-        - command:
-            - "/otelcontribcol"
-            - "--config=/conf/otel/otel-collector-config.yaml"
-          image: williamluckyli/otel-collector-hyperos-relation-metrics:v1.3
-          imagePullPolicy: IfNotPresent
-          name: paladin
-          resources:
-            limits:
-              cpu: 1
-              memory: 2Gi
-            requests:
-              cpu: 200m
-              memory: 400Mi
-          ports:
-            - containerPort: 55679 # Default endpoint for ZPages.
-            - containerPort: 4317 # Default endpoint for OpenTelemetry receiver.
-            - containerPort: 14250 # Default endpoint for Jaeger HTTP receiver.
-            - containerPort: 14268 # Default endpoint for Jaeger HTTP receiver.
-            - containerPort: 9411 # Default endpoint for Zipkin receiver.
-            - containerPort: 8899  # Default endpoint for querying metrics.
-          volumeMounts:
-            - name: otel-collector-config-vol
-              mountPath: /conf/otel
-      volumes:
-        - configMap:
-            name: otel-collector-conf
-            items:
-              - key: otel-collector-config
-                path: otel-collector-config.yaml
-              - key: kubeconfig
-                path: config
+      - command:
+        - /otelcontribcol
+        - --config=/conf/otel/otel-collector-config.yaml
+        image: 172.17.9.231:8880/hypermonitorystack/otel-collector-hyperos-relation-metrics:v1.5
+        imagePullPolicy: IfNotPresent
+        name: hyperos-relation
+        ports:
+        - containerPort: 55679
+          protocol: TCP
+        - containerPort: 4317
+          protocol: TCP
+        - containerPort: 14250
+          protocol: TCP
+        - containerPort: 14268
+          protocol: TCP
+        - containerPort: 9411
+          protocol: TCP
+        - containerPort: 8899
+          protocol: TCP
+        resources:
+          limits:
+            cpu: "1"
+            memory: 2Gi
+          requests:
+            cpu: 200m
+            memory: 400Mi
+        volumeMounts:
+        - mountPath: /conf/otel
           name: otel-collector-config-vol
+      nodeSelector:
+        hypernode.cluster.pml.com.cn/node-role: System
+      tolerations:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/master
+        operator: Equal
+      volumes:
+      - configMap:
+          items:
+          - key: otel-collector-config
+            path: otel-collector-config.yaml
+          - key: kubeconfig
+            path: config
+          name: otel-collector-hyperos-relation-conf
+        name: otel-collector-config-vol
